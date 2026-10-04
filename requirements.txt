@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+# 1.5.2 is used because newer scikit-learn wheels are blocked by Windows
+# Smart App Control on this machine. Any recent version works.
+scikit-learn==1.5.2
+numpy
+pytest
+httpx
