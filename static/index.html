@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI-Powered Energy Management System</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>AI-Powered Energy Management System</h1>
+    <p class="sub">Industrial cost-reduction prototype &middot; simulated data only &middot; no real equipment is controlled</p>
+  </header>
+
+  <nav>
+    <button class="tab active" data-view="dashboard">Dashboard</button>
+    <button class="tab" data-view="energy">Energy</button>
+    <button class="tab" data-view="forecast">Forecast</button>
+    <button class="tab" data-view="anomalies">Anomalies</button>
+    <button class="tab" data-view="recommendations">Recommendations</button>
+    <button class="tab" data-view="simulation">Simulation / Savings</button>
+  </nav>
+
+  <main>
+    <div id="message" class="message hidden"></div>
+
+    <section id="view-dashboard" class="view active">
+      <div class="cards" id="dashboard-cards">Loading...</div>
+      <h2>Recommendation status</h2>
+      <div class="cards" id="dashboard-status"></div>
+      <p><button onclick="loadDashboard()">Refresh dashboard</button></p>
+    </section>
+
+    <section id="view-energy" class="view">
+      <h2>Current energy data</h2>
+      <div class="cards" id="energy-current"></div>
+      <h2>24-hour summary per machine</h2>
+      <table id="energy-summary"></table>
+      <h2>Historical readings</h2>
+      <p>
+        Machine:
+        <select id="history-machine">
+          <option value="ALL">ALL (plant total)</option>
+          <option>CNC-Mill-01</option>
+          <option>Compressor-02</option>
+          <option>Chiller-03</option>
+          <option>Conveyor-Line-04</option>
+        </select>
+        Last
+        <select id="history-hours">
+          <option value="24">24 hours</option>
+          <option value="72" selected>72 hours</option>
+          <option value="168">168 hours</option>
+        </select>
+        <button onclick="loadEnergy()">Load</button>
+      </p>
+      <table id="energy-history"></table>
+    </section>
+
+    <section id="view-forecast" class="view">
+      <h2>Forecast (Linear Regression)</h2>
+      <div class="cards" id="forecast-meta"></div>
+      <p><button onclick="loadForecast()">Refresh forecast</button></p>
+      <h3>Next 24 hours (predicted plant demand)</h3>
+      <div id="forecast-bars" class="bars"></div>
+      <table id="forecast-table"></table>
+    </section>
+
+    <section id="view-anomalies" class="view">
+      <h2>Anomaly detection (Isolation Forest)</h2>
+      <div class="cards" id="anomaly-meta"></div>
+      <p><button onclick="loadAnomalies()">Refresh anomalies</button></p>
+      <table id="anomaly-table"></table>
+    </section>
+
+    <section id="view-recommendations" class="view">
+      <h2>Recommendations</h2>
+      <p>
+        Status filter:
+        <select id="rec-filter" onchange="loadRecommendations()">
+          <option value="all">all</option>
+          <option value="pending">pending</option>
+          <option value="approved">approved</option>
+          <option value="overridden">overridden</option>
+          <option value="simulated">simulated</option>
+        </select>
+        <button onclick="generateRecommendations()">Run rule engine</button>
+      </p>
+      <div id="recommendation-list">Loading...</div>
+    </section>
+
+    <section id="view-simulation" class="view">
+      <h2>Simulated Measurement &amp; Verification (M&amp;V)</h2>
+      <p>
+        Approved or overridden recommendations can be simulated. Values come from the
+        simulated dataset only - they are not real industrial savings.
+      </p>
+      <p><button onclick="loadSimulations()">Refresh results</button></p>
+      <div class="cards" id="savings-totals"></div>
+      <table id="simulation-table"></table>
+    </section>
+  </main>
+
+  <footer>
+    <p>Prototype: Simulated data &rarr; Forecast &rarr; Anomaly &rarr; Recommendation &rarr; Approve/Override &rarr; Simulation &rarr; Savings</p>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
