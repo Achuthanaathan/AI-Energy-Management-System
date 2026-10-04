@@ -44,7 +44,8 @@ def generate_dataset(days: int = 30, seed: int = 42, start: datetime | None = No
     rng = random.Random(seed)
     if start is None:
         now = datetime.now().replace(minute=0, second=0, microsecond=0)
-        start = now - timedelta(hours=days * 24)
+        # Start at midnight so that the timestamp hour always equals the loop hour.
+        start = (now - timedelta(hours=days * 24)).replace(hour=0)
 
     rows = []
     for day in range(days):
