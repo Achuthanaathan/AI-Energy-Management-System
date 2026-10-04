@@ -131,55 +131,61 @@ button:disabled { background: #c8d0d8; color: #6b7680; cursor: not-allowed; }
 
 footer { padding: 10px 20px 24px; font-size: 12px; color: #667; }
 
-/* ---------------- recommendations workflow (steps + status) ---------------- */
-.hint { font-size: 13px; color: #4d5a66; margin: 0 0 12px; max-width: 980px; }
+/* ------------- recommendations: compact workflow summary ------------- */
+.flow-line { font-size: 12px; color: #667; margin: 0 0 8px; }
+.chips { margin: 0 0 12px; }
+.chip { display: inline-block; font-size: 11px; color: #44515e; background: #eef1f4;
+  border: 1px solid #dbe1e7; border-radius: 10px; padding: 2px 9px; margin: 0 6px 4px 0; }
+.chip strong { color: #14314f; margin-left: 3px; }
+.chip.pending { border-color: #e3c98a; background: #fdf8ea; }
+.chip.approved { border-color: #b3d9c2; background: #eff8f2; }
+.chip.overridden { border-color: #e0b6b6; background: #fbeeee; }
+.chip.simulated { border-color: #b6c7db; background: #f0f4f9; }
+.muted { font-size: 12px; color: #77838f; }
 
-.flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 12px; }
-.flow-step { background: #fff; border: 1px solid #d5dbe1; border-top: 3px solid #1f3b57;
-  padding: 6px 10px; font-size: 12px; font-weight: bold; color: #1f3b57; }
-.flow-num { display: inline-block; width: 16px; height: 16px; line-height: 16px; text-align: center;
-  background: #1f3b57; color: #fff; border-radius: 50%; font-size: 11px; margin-right: 6px; }
-.flow-arrow { color: #8f9aa5; font-size: 15px; }
-
+.rec { padding: 10px 14px; }
 .rec.status-pending { border-left: 4px solid #b07d00; }
 .rec.status-approved { border-left: 4px solid #1c7a3d; }
 .rec.status-overridden { border-left: 4px solid #8a3030; }
 .rec.status-simulated { border-left: 4px solid #26456b; }
 
-.rec-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-.rec-meta { font-size: 12px; color: #667; margin: 6px 0 8px; }
+.rec-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.rec-head h3 { font-size: 15px; margin: 0; }
+.rec-meta { font-size: 12px; color: #5b6672; margin: 3px 0 10px; }
 
-.rec-section { margin: 8px 0; font-size: 13px; }
-.rec-section .tag { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .05em;
-  color: #77838f; font-weight: bold; margin-bottom: 2px; }
+.rec-metrics { display: flex; flex-wrap: wrap; gap: 26px; margin: 0 0 10px; }
+.rec-metrics > div { min-width: 88px; }
+.rec-metrics .k { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: #77838f; }
+.rec-metrics strong { font-size: 15px; color: #14314f; }
+.rec-metrics strong.good { color: #1c7a3d; }
 
-.impact { display: flex; flex-wrap: wrap; border: 1px solid #d5dbe1; background: #fbfcfd; margin: 10px 0; }
-.impact > div { flex: 1 1 150px; padding: 6px 9px; border-right: 1px solid #e2e7ec; }
-.impact > div:last-child { border-right: none; }
-.impact .k { font-size: 10px; text-transform: uppercase; color: #77838f; }
-.impact .v { font-size: 14px; font-weight: bold; color: #14314f; }
-.impact .v.good { color: #1c7a3d; }
+.rec .actions { margin-top: 0; }
+button.link { background: none; color: #1f3b57; text-decoration: underline; padding: 0; font-size: 12px; }
+button.link:hover { background: none; color: #2c5680; }
 
-.steps { display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0 8px; }
-.step { flex: 1 1 140px; border: 1px dashed #c9d2da; background: #fff; padding: 5px 8px;
-  font-size: 11px; color: #8a949e; }
-.step .n { font-weight: bold; margin-right: 4px; }
-.step.done { border-style: solid; border-color: #1c7a3d; background: #eef8f1; color: #1c7a3d; }
-.step.current { border-style: solid; border-color: #b07d00; background: #fdf6e3; color: #8a6100; font-weight: bold; }
+.trail { font-size: 11px; color: #8a949e; margin: 0 0 6px; }
+.trail .sep { margin: 0 5px; color: #b7c0c8; }
+.trail .s.done { color: #1c7a3d; }
+.trail .s.current { color: #8a6100; font-weight: bold; }
 
-.status-line { font-size: 13px; margin: 8px 0; padding: 7px 9px; border-left: 3px solid #667; background: #f7f9fb; }
-.status-line.pending { border-left-color: #b07d00; background: #fdf8ea; }
-.status-line.approved { border-left-color: #1c7a3d; background: #eff8f2; }
-.status-line.overridden { border-left-color: #8a3030; background: #fbeeee; }
-.status-line.simulated { border-left-color: #26456b; background: #f0f4f9; }
+.status-line { font-size: 12px; color: #44515e; margin: 0 0 10px; padding-left: 9px;
+  border-left: 3px solid #c9d2da; }
+.status-line.pending { border-left-color: #b07d00; }
+.status-line.approved { border-left-color: #1c7a3d; }
+.status-line.overridden { border-left-color: #8a3030; }
+.status-line.simulated { border-left-color: #26456b; }
 
-.result-box { border: 1px solid #26456b; background: #f2f6fa; padding: 8px 10px; margin-top: 8px; }
-.result-box h4 { margin: 0 0 6px; font-size: 13px; color: #26456b; }
-.result-box .result-note { font-size: 11px; color: #667; margin: 6px 0 0; }
+.mvstrip { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; background: #f4f7fa;
+  border: 1px solid #dbe4ec; padding: 7px 10px; margin: 0 0 10px; font-size: 13px; }
+.mvstrip .k { font-size: 10px; text-transform: uppercase; color: #77838f; }
+.mvstrip strong { font-size: 14px; color: #14314f; }
+.mvstrip strong.good { color: #1c7a3d; }
 
-.mv { display: flex; flex-wrap: wrap; border: 1px solid #c9d6e2; background: #fff; }
-.mv > div { flex: 1 1 130px; padding: 5px 8px; border-right: 1px solid #e2e7ec; }
-.mv > div:last-child { border-right: none; }
-.mv .k { font-size: 10px; text-transform: uppercase; color: #77838f; }
-.mv .v { font-size: 14px; font-weight: bold; color: #14314f; }
-.mv .v.save { color: #1c7a3d; }
+.details { margin-top: 8px; border-top: 1px solid #e6eaee; padding-top: 6px; }
+.details summary { cursor: pointer; font-size: 12px; font-weight: bold; color: #44515e; }
+.details .detail-body { padding-top: 6px; font-size: 12px; color: #44515e; }
+.details .detail-body p { margin: 4px 0; }
+.details .tag { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .04em;
+  color: #77838f; font-weight: bold; }
+.details .tech { color: #667; }
+.details .note { font-size: 11px; color: #8a949e; font-style: italic; }

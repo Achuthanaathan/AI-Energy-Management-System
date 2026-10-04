@@ -76,23 +76,8 @@
     <section id="view-recommendations" class="view">
       <h2>Recommendations</h2>
 
-      <div class="flow">
-        <div class="flow-step"><span class="flow-num">1</span>AI recommendation</div>
-        <div class="flow-arrow">&rarr;</div>
-        <div class="flow-step"><span class="flow-num">2</span>Human approve / override</div>
-        <div class="flow-arrow">&rarr;</div>
-        <div class="flow-step"><span class="flow-num">3</span>Simulation (shadow mode)</div>
-        <div class="flow-arrow">&rarr;</div>
-        <div class="flow-step"><span class="flow-num">4</span>Savings verification (M&amp;V)</div>
-      </div>
-
-      <p class="hint">
-        Every recommendation starts as <span class="badge pending">pending</span> and waits for a human decision.
-        Approving or overriding records that decision, and only then can the action be simulated.
-        Nothing here controls real equipment - approved actions are simulated only.
-      </p>
-
-      <div class="cards" id="rec-summary"></div>
+      <p class="flow-line">AI Recommendation &rarr; Human Decision &rarr; Simulation &rarr; Savings</p>
+      <div id="rec-summary" class="chips"></div>
 
       <p>
         Status filter:
@@ -104,6 +89,7 @@
           <option value="simulated">simulated</option>
         </select>
         <button onclick="generateRecommendations()">Run rule engine</button>
+        <span class="muted">Human approval required &middot; nothing here controls real equipment</span>
       </p>
       <div id="recommendation-list">Loading...</div>
     </section>

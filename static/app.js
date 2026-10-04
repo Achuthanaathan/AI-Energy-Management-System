@@ -229,10 +229,10 @@ async function loadRecommendations() {
     const counts = { pending: 0, approved: 0, overridden: 0, simulated: 0 };
     all.forEach((r) => { counts[r.status] = (counts[r.status] || 0) + 1; });
     document.getElementById("rec-summary").innerHTML =
-      card("Step 1-2: pending decision", counts.pending, "Waiting for Approve or Override") +
-      card("Step 3: approved, awaiting simulation", counts.approved, "Simulate is available") +
-      card("Overridden by operator", counts.overridden, "Not part of the approved plan") +
-      card("Step 4: simulated (M&V done)", counts.simulated, "Result shown on the card");
+      `<span class="chip pending">pending <strong>${counts.pending}</strong></span>` +
+      `<span class="chip approved">approved <strong>${counts.approved}</strong></span>` +
+      `<span class="chip overridden">overridden <strong>${counts.overridden}</strong></span>` +
+      `<span class="chip simulated">simulated <strong>${counts.simulated}</strong></span>`;
 
     if (!list.length) {
       document.getElementById("recommendation-list").innerHTML =
@@ -247,102 +247,100 @@ async function loadRecommendations() {
   }
 }
 
-const REC_STEPS = [
-  "AI recommendation",
-  "Human decision (approve / override)",
-  "Simulation (shadow mode)",
-  "Savings verified (M&V)",
-];
+const REC_STEPS = ["Recommendation", "Human decision", "Simulation", "Savings"];
 
 function showView(view) {
   const button = document.querySelector(`nav .tab[data-view="${view}"]`);
   if (button) button.click();
 }
 
-function lifecycleSteps(status) {
+function stepTrail(status) {
   const done = status === "simulated" ? [1, 2, 3, 4] : status === "pending" ? [1] : [1, 2];
   const current = status === "pending" ? 2 : status === "simulated" ? 0 : 3;
   const steps = REC_STEPS.map((label, index) => {
     const step = index + 1;
-    const state = done.includes(step) ? "done" : step === current ? "current" : "";
-    const mark = done.includes(step) ? "&#10003; " : step === current ? "&#9654; " : "";
-    return `<div class="step ${state}"><span class="n">${step}</span>${mark}${label}</div>`;
-  }).join("");
-  return `<div class="steps">${steps}</div>`;
+    const cls = done.includes(step) ? "s done" : step === current ? "s current" : "s";
+    return `<span class="${cls}">${step}. ${label}</span>`;
+  }).join('<span class="sep">&rarr;</span>');
+  return `<p class="trail">${steps}</p>`;
 }
 
-function statusLine(r) {
-  const note = r.decision_note ? ` Operator note: "${r.decision_note}".` : "";
-  if (r.status === "pending") {
-    return "Status: PENDING - awaiting human decision. Approve to continue to the simulation step, or override to reject the suggestion.";
+function shortTrigger(r) {
+  if (r.rule === "peak_shift") {
+    const from = String(r.shift_from_hour).padStart(2, "0") + ":00";
+    return `Forecast peak ${num(r.forecast_peak_kw, 0)} kW in the ${from} peak window`;
   }
-  if (r.status === "approved") {
-    return `Status: APPROVED - the operator accepted this action.${note} Next step: run the simulation to verify the savings.`;
-  }
-  if (r.status === "overridden") {
-    return `Status: OVERRIDDEN by the operator - this action is NOT part of the approved plan.${note} The simulation can still be run as a counterfactual, if useful.`;
-  }
-  return `Status: SIMULATED - the action has moved from a recommendation to a simulated result.${note}`;
+  return "Unusual energy use detected by Isolation Forest";
 }
 
-function simulationBox(sim) {
-  if (!sim) {
-    return `<div class="result-box"><h4>Step 4 - Simulation result</h4>
-      <p class="result-note">No simulation result found for this recommendation yet. Press "Run simulation".</p></div>`;
-  }
-  return `<div class="result-box">
-    <h4>Step 4 - Simulation completed (simulated Measurement &amp; Verification)</h4>
-    <div class="mv">
-      <div><div class="k">Baseline energy</div><div class="v">${num(sim.baseline_energy_kwh)} kWh</div></div>
-      <div><div class="k">Simulated energy</div><div class="v">${num(sim.simulated_energy_kwh)} kWh</div></div>
-      <div><div class="k">Energy saved</div><div class="v save">${num(sim.energy_saved_kwh)} kWh</div></div>
-      <div><div class="k">Baseline cost</div><div class="v">${num(sim.baseline_cost)}</div></div>
-      <div><div class="k">Simulated cost</div><div class="v">${num(sim.simulated_cost)}</div></div>
-      <div><div class="k">Money saved</div><div class="v save">${num(sim.cost_saved)}</div></div>
-      <div><div class="k">Peak before / after</div><div class="v">${num(sim.baseline_peak_kw)} / ${num(sim.simulated_peak_kw)} kW</div></div>
-    </div>
-    <p class="result-note">${sim.note}</p>
-    <button onclick="showView('simulation')">Go to Savings / M&amp;V page</button>
+function statusPhrase(r) {
+  if (r.status === "pending") return "Awaiting your decision";
+  if (r.status === "approved") return "Approved - run the simulation to verify the saving";
+  if (r.status === "overridden") return "Overridden - not part of the approved plan";
+  return "Simulated - savings verified";
+}
+
+function mvStrip(sim) {
+  return `<div class="mvstrip">
+    <span><span class="k">Energy saved</span> <strong class="good">${num(sim.energy_saved_kwh)} kWh</strong></span>
+    <span><span class="k">Money saved</span> <strong class="good">${num(sim.cost_saved)}</strong></span>
+    <span><span class="k">Peak</span> <strong>${num(sim.baseline_peak_kw, 0)} &rarr; ${num(sim.simulated_peak_kw, 0)} kW</strong></span>
+    <button class="link" onclick="showView('simulation')">Savings page &rarr;</button>
   </div>`;
 }
 
-function recommendationCard(r, sim) {
+function detailsBox(r, sim) {
   const hh = (hour) => String(hour).padStart(2, "0") + ":00";
+  return `<details class="details">
+    <summary>View details</summary>
+    <div class="detail-body">
+      <p><span class="tag">Suggested action</span>${r.action}</p>
+      <p><span class="tag">Reason</span>${r.reason}</p>
+      ${r.decision_note ? `<p><span class="tag">Operator note</span>${r.decision_note}</p>` : ""}
+      <p class="tech">Recommendation #${r.id} &middot; rule: ${r.rule} &middot; created ${shortTime(r.created_at)} &middot;
+        decision: ${r.decision || "-"}${r.decided_at ? " (" + shortTime(r.decided_at) + ")" : ""} &middot;
+        shift window: ${hh(r.shift_from_hour)} &rarr; ${hh(r.shift_to_hour)} &middot;
+        load moved: ${num(r.shift_kwh)} kWh &middot; est. energy saved: ${num(r.est_energy_impact_kwh)} kWh &middot;
+        forecast peak: ${num(r.forecast_peak_kw)} kW</p>
+      ${sim ? `<p class="tech">Baseline: ${num(sim.baseline_energy_kwh)} kWh / ${num(sim.baseline_cost)} &middot;
+        simulated: ${num(sim.simulated_energy_kwh)} kWh / ${num(sim.simulated_cost)} &middot;
+        peak: ${num(sim.baseline_peak_kw)} &rarr; ${num(sim.simulated_peak_kw)} kW</p>
+        <p class="note">${sim.note}</p>` : ""}
+      <p class="note">Estimated values are model estimates, not measured values.</p>
+    </div>
+  </details>`;
+}
+
+function recommendationCard(r, sim) {
   const canApprove = r.status === "pending";
   const canOverride = r.status !== "simulated";
   const canSimulate = r.status !== "pending";
   return `
   <div class="rec status-${r.status}">
     <div class="rec-head">
-      <h3>Recommendation #${r.id}: ${r.title}</h3>
+      <h3>${r.title}</h3>
       <span class="badge ${r.status}">${r.status}</span>
     </div>
-    <p class="rec-meta">Rule: <strong>${r.rule}</strong> &middot; Machine: <strong>${r.machine}</strong>
-      &middot; Risk: <strong>${r.risk_level}</strong> &middot; Decision: <strong>${r.decision || "-"}</strong></p>
+    <p class="rec-meta"><strong>${r.machine}</strong> &middot; ${shortTrigger(r)}</p>
 
-    ${lifecycleSteps(r.status)}
-    <p class="status-line ${r.status}">${statusLine(r)}</p>
-
-    <div class="rec-section"><span class="tag">Recommendation / suggested action</span>${r.action}</div>
-    <div class="rec-section"><span class="tag">Reason</span>${r.reason}</div>
-
-    <div class="impact">
-      <div><div class="k">Estimated energy saved</div><div class="v good">${num(r.est_energy_impact_kwh)} kWh</div></div>
-      <div><div class="k">Estimated money saved</div><div class="v good">${num(r.est_cost_impact)}</div></div>
-      <div><div class="k">Load moved</div><div class="v">${num(r.shift_kwh)} kWh</div></div>
-      <div><div class="k">Production impact</div><div class="v">${num(r.production_impact_pct, 1)}%</div></div>
-      <div><div class="k">Risk</div><div class="v">${r.risk_level}</div></div>
-      <div><div class="k">Shift window</div><div class="v">${hh(r.shift_from_hour)} &rarr; ${hh(r.shift_to_hour)}</div></div>
+    <div class="rec-metrics">
+      <div><span class="k">Est. saving</span><strong class="good">${num(r.est_cost_impact)}</strong></div>
+      <div><span class="k">Risk</span><strong>${r.risk_level}</strong></div>
+      <div><span class="k">Production impact</span><strong>${num(r.production_impact_pct, 1)}%</strong></div>
     </div>
-    <p class="rec-meta">Estimates are model estimates, not measured values. Verified simulated figures appear after step 3.</p>
 
-    ${sim ? simulationBox(sim) : ""}
+    ${sim ? mvStrip(sim) : ""}
+
+    ${stepTrail(r.status)}
+    <p class="status-line ${r.status}">${statusPhrase(r)}</p>
 
     <div class="actions">
       <button onclick="decide(${r.id}, 'approve')" ${canApprove ? "" : 'disabled title="Only a pending recommendation can be approved"'}>Approve</button>
       <button onclick="decide(${r.id}, 'override')" ${canOverride ? "" : 'disabled title="Already simulated"'}>Override</button>
       <button onclick="simulate(${r.id})" ${canSimulate ? "" : 'disabled title="Approve or override the recommendation first"'}>Run simulation</button>
     </div>
+
+    ${detailsBox(r, sim)}
   </div>`;
 }
 
