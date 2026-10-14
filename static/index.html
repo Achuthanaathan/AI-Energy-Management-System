@@ -25,10 +25,43 @@
     <div id="message" class="message hidden"></div>
 
     <section id="view-dashboard" class="view active">
-      <div class="cards" id="dashboard-cards">Loading...</div>
-      <h2>Recommendation status</h2>
-      <div class="cards" id="dashboard-status"></div>
-      <p><button onclick="loadDashboard()">Refresh dashboard</button></p>
+      <p class="lede"><span class="label">Now:</span>
+        <span id="now-summary">Loading…</span></p>
+
+      <div class="kpi-row" id="dashboard-cards"></div>
+
+      <div class="grid">
+        <div class="panel">
+          <h2 class="panel-title">Energy trend</h2>
+          <div id="dashboard-chart" class="chart"></div>
+          <p class="panel-note">Plant load, 24 hours</p>
+        </div>
+        <div class="panel">
+          <h2 class="panel-title">Status</h2>
+          <div id="dashboard-status" class="chips"></div>
+          <details class="details">
+            <summary>View details</summary>
+            <div class="detail-body">
+              <p><span class="tag">Legend</span>Layout of the recommendation status chips shown on the Dashboard:</p>
+              <div class="chips" style="margin-top:6px;">
+                <span class="chip pending">pending <strong>1</strong></span>
+                <span class="chip approved">approved <strong>0</strong></span>
+                <span class="chip overridden">overridden <strong>0</strong></span>
+                <span class="chip simulated">simulated <strong>0</strong></span>
+              </div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <details class="details">
+        <summary>View details</summary>
+        <div class="detail-body">
+          <p><span class="tag">AI INSIGHT</span><span id="insight-body"></span></p>
+        </div>
+      </details>
+
+      <p class="actions"><button onclick="loadDashboard()">Refresh dashboard</button></p>
     </section>
 
     <section id="view-energy" class="view">

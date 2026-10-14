@@ -76,38 +76,62 @@ function reload(view) {
 async function loadDashboard() {
   try {
     const d = await api("/dashboard");
-    document.getElementById("dashboard-cards").innerHTML =
-      card("Current usage", num(d.current.total_kw) + " kW", shortTime(d.current.timestamp)) +
-      card(
-        "Forecast peak demand",
-        num(d.forecast.peak_demand_kw) + " kW",
-        "at " + shortTime(d.forecast.peak_timestamp) + " (threshold " + d.settings.peak_threshold_kw + " kW)"
-      ) +
-      card("Anomalies detected", d.anomalies.count, d.anomalies.injected_detected + " injected readings found") +
-      card(
-        "Estimated / verified savings",
-        num(d.savings.verified_cost_saved) + " cost units",
-        "pending potential " + num(d.savings.potential_cost_saved)
-      ) +
-      card("Last 24h energy", num(d.current.last_24h_energy_kwh) + " kWh", "cost " + num(d.current.last_24h_cost));
 
+    // ------------------------------------------------------------------
+    // LEVEL 1 - AT A GLANCE (4 KPIs, existing API values only)
+    // ------------------------------------------------------------------
+    document.getElementById("dashboard-cards").innerHTML =
+      card("Current usage", num(d.current.total_kw) + " kW",
+           shortTime(d.current.timestamp)) +
+      card("Energy cost", num(d.current.last_24h_cost) + " cost units",
+           "24h actual") +
+      card("Peak demand", num(d.forecast.peak_demand_kw) + " kW",
+           "forecast at " + shortTime(d.forecast.peak_timestamp)) +
+      card("Potential saving", num(d.savings.potential_cost_saved) + " cost units",
+           "pending approvals");
+
+    // ------------------------------------------------------------------
+    // LEVEL 2 - MAIN VISUAL INFORMATION
+    // ------------------------------------------------------------------
+    // 24-hour energy trend (bar chart built from the same data the chart
+    // already renders on the Forecast page - no new endpoints, no new data).
+    const series = d.forecast.series || [];
+    const max = Math.max(...series.map((p) => p.predicted_kwh), 1);
+    document.getElementById("dashboard-chart").innerHTML = series
+      .map((p) => {
+        const height = Math.max(4, (p.predicted_kwh / max) * 100);
+        return `<div class="bar" style="height:${height}%"></div>`;
+      })
+      .join("");
+
+    // Recommendation status summary (compact chips).
     const counts = d.recommendation_counts;
     document.getElementById("dashboard-status").innerHTML =
-      card("Pending", counts.pending) +
-      card("Approved", counts.approved) +
-      card("Overridden", counts.overridden) +
-      card("Simulated", counts.simulated);
+      `<span class="chip pending">pending <strong>${counts.pending}</strong></span>` +
+      `<span class="chip approved">approved <strong>${counts.approved}</strong></span>` +
+      `<span class="chip overridden">overridden <strong>${counts.overridden}</strong></span>` +
+      `<span class="chip simulated">simulated <strong>${counts.simulated}</strong></span>`;
 
+    // AI INSIGHT - headline kept in the visible "At a glance" area, the
+    // supporting technical detail (machine, rule, windows, energy moved)
+    // moved into a collapsed "View details" section.
     if (d.latest_recommendation) {
       const r = d.latest_recommendation;
-      document.getElementById("dashboard-status").innerHTML += `
-        <div class="card" style="flex:1 1 100%">
-          <div class="label">Latest recommendation</div>
-          <div class="value" style="font-size:15px">${r.title}</div>
-          <div class="extra">${r.reason}</div>
-          <div class="extra">Est. cost impact: ${num(r.est_cost_impact)} &middot;
-            status: <span class="badge ${r.status}">${r.status}</span></div>
-        </div>`;
+      const isPeakShift = r.rule === "peak_shift";
+      const headline =
+        isPeakShift
+          ? `Shift ${r.machine} out of the ${String(r.shift_from_hour).padStart(2, "0")}:00 peak window`
+          : `Investigate unusual energy use on ${r.machine}`;
+      const insightBody =
+        isPeakShift
+          ? `Stacked-shift recommendation on <strong>${r.machine}</strong>: move ${num(r.shift_kwh)} kWh of load from hour ${String(r.shift_from_hour).padStart(2, "0")}:00 to hour ${String(r.shift_to_hour).padStart(2, "0")}:00.`
+          : `Anomaly recommendation on <strong>${r.machine}</strong>: the detector flagged unusually high energy use.`;
+      document.getElementById("insight-body").innerHTML = insightBody;
+
+      document.getElementById("now-summary").innerHTML =
+        `<span class="label">AI INSIGHT</span>${headline} - ` +
+        `<span class="good">est. saving ${num(r.est_cost_impact)}</span>` +
+        `<button class="link" onclick="showRecommendation('${r.id}')">View recommendation &rarr;</button>`;
     }
   } catch (error) {
     showMessage("Dashboard failed: " + error.message, true);
