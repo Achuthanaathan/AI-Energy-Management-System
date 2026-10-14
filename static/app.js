@@ -75,46 +75,72 @@ function reload(view) {
 // -------------------------------- dashboard ------------------------------- //
 async function loadDashboard() {
   try {
-    const d = await api("/dashboard");
+    const [d, fc] = await Promise.all([
+      api("/dashboard"),
+      api("/forecast?machine=ALL&horizon=24").catch(() => null),
+    ]);
 
     // ------------------------------------------------------------------
     // LEVEL 1 - AT A GLANCE (4 KPIs, existing API values only)
     // ------------------------------------------------------------------
     document.getElementById("dashboard-cards").innerHTML =
-      card("Current usage", num(d.current.total_kw) + " kW",
-           shortTime(d.current.timestamp)) +
-      card("Energy cost", num(d.current.last_24h_cost) + " cost units",
-           "24h actual") +
-      card("Peak demand", num(d.forecast.peak_demand_kw) + " kW",
-           "forecast at " + shortTime(d.forecast.peak_timestamp)) +
-      card("Potential saving", num(d.savings.potential_cost_saved) + " cost units",
-           "pending approvals");
+      card("Current Usage", num(d.current.total_kw) + " kW",
+           shortTime(d.current.timestamp) + (d.current.is_peak_tariff ? " (PEAK tariff)" : " (Normal)")) +
+      card("24h Energy Cost", num(d.current.last_24h_cost) + " cost units",
+           num(d.current.last_24h_energy_kwh) + " kWh actual") +
+      card("Forecast Peak", num(d.forecast.peak_demand_kw) + " kW",
+           "Peak at " + shortTime(d.forecast.peak_timestamp)) +
+      card("Potential Saving", num(d.savings.potential_cost_saved) + " cost units",
+           `${d.recommendation_counts.pending} pending approval`);
 
     // ------------------------------------------------------------------
-    // LEVEL 2 - MAIN VISUAL INFORMATION
+    // LEVEL 2 - MAIN VISUAL INFORMATION (24-hour energy trend chart)
     // ------------------------------------------------------------------
-    // 24-hour energy trend (bar chart built from the same data the chart
-    // already renders on the Forecast page - no new endpoints, no new data).
-    const series = d.forecast.series || [];
-    const max = Math.max(...series.map((p) => p.predicted_kwh), 1);
-    document.getElementById("dashboard-chart").innerHTML = series
-      .map((p) => {
-        const height = Math.max(4, (p.predicted_kwh / max) * 100);
-        return `<div class="bar" style="height:${height}%"></div>`;
-      })
-      .join("");
+    const series = (fc && fc.series) || (d.forecast && d.forecast.series) || [];
+    if (series.length) {
+      const max = Math.max(...series.map((p) => p.predicted_kwh), 1);
+      document.getElementById("dashboard-chart").innerHTML = series
+        .map((p) => {
+          const height = Math.max(5, (p.predicted_kwh / max) * 100);
+          const hour = Number(p.timestamp.slice(11, 13));
+          const isPeakHour = hour >= 18 && hour <= 21;
+          return `<div class="bar ${isPeakHour ? "peak" : ""}" style="height:${height}%">
+            <span>${shortTime(p.timestamp)} &middot; ${num(p.predicted_kwh)} kW${isPeakHour ? " (Peak)" : ""}</span>
+          </div>`;
+        })
+        .join("");
+    } else {
+      document.getElementById("dashboard-chart").innerHTML =
+        '<p class="panel-note" style="margin:auto;">No forecast trend data available</p>';
+    }
 
-    // Recommendation status summary (compact chips).
+    // Recommendation status summary and M&V verified savings.
     const counts = d.recommendation_counts;
+    const verifiedCost = d.savings && d.savings.verified_cost_saved != null ? d.savings.verified_cost_saved : 0;
+    const verifiedKwh = d.savings && d.savings.verified_energy_saved_kwh != null ? d.savings.verified_energy_saved_kwh : 0;
     document.getElementById("dashboard-status").innerHTML =
-      `<span class="chip pending">pending <strong>${counts.pending}</strong></span>` +
-      `<span class="chip approved">approved <strong>${counts.approved}</strong></span>` +
-      `<span class="chip overridden">overridden <strong>${counts.overridden}</strong></span>` +
-      `<span class="chip simulated">simulated <strong>${counts.simulated}</strong></span>`;
+      `<div class="chips" style="margin-bottom:8px;">
+        <span class="chip pending">pending <strong>${counts.pending}</strong></span>
+        <span class="chip approved">approved <strong>${counts.approved}</strong></span>
+        <span class="chip overridden">overridden <strong>${counts.overridden}</strong></span>
+        <span class="chip simulated">simulated <strong>${counts.simulated}</strong></span>
+      </div>
+      <div class="status-metric">
+        <span class="label">Verified Savings (M&V)</span>
+        <strong class="good" style="font-size:16px;">${num(verifiedCost)} cost units</strong>
+        <span class="sub" style="display:block; font-size:11px; color:#64748b; margin-top:2px;">${num(verifiedKwh)} kWh saved across ${d.savings.simulation_count || 0} simulations</span>
+      </div>`;
 
-    // AI INSIGHT - headline kept in the visible "At a glance" area, the
-    // supporting technical detail (machine, rule, windows, energy moved)
-    // moved into a collapsed "View details" section.
+    const configEl = document.getElementById("dashboard-config-details");
+    if (configEl && d.settings) {
+      configEl.innerHTML =
+        `<p><span class="tag">Peak Threshold</span>${d.settings.peak_threshold_kw} kW</p>
+         <p><span class="tag">Flexible Machine</span>${d.settings.flexible_machine}</p>
+         <p><span class="tag">Model MAE</span>${num(d.forecast.holdout_mae_kwh)} kWh (${d.forecast.model})</p>
+         <p class="tech">${d.settings.note}</p>`;
+    }
+
+    // AI INSIGHT - headline in visible alert area, technical detail in collapsed section
     if (d.latest_recommendation) {
       const r = d.latest_recommendation;
       const isPeakShift = r.rule === "peak_shift";
@@ -126,12 +152,18 @@ async function loadDashboard() {
         isPeakShift
           ? `Stacked-shift recommendation on <strong>${r.machine}</strong>: move ${num(r.shift_kwh)} kWh of load from hour ${String(r.shift_from_hour).padStart(2, "0")}:00 to hour ${String(r.shift_to_hour).padStart(2, "0")}:00.`
           : `Anomaly recommendation on <strong>${r.machine}</strong>: the detector flagged unusually high energy use.`;
-      document.getElementById("insight-body").innerHTML = insightBody;
+      document.getElementById("insight-body").innerHTML =
+        `${insightBody} <span class="tech">Reason: ${r.reason} &middot; Action: ${r.action}</span>`;
 
       document.getElementById("now-summary").innerHTML =
-        `<span class="label">AI INSIGHT</span>${headline} - ` +
-        `<span class="good">est. saving ${num(r.est_cost_impact)}</span>` +
+        `<strong>${headline}</strong> &middot; ` +
+        `<span class="good">Est. saving: ${num(r.est_cost_impact)} cost units</span> &middot; ` +
         `<button class="link" onclick="showRecommendation('${r.id}')">View recommendation &rarr;</button>`;
+    } else {
+      document.getElementById("now-summary").innerHTML =
+        "All systems operating within standard thresholds. No active recommendations.";
+      document.getElementById("insight-body").innerHTML =
+        "No active recommendations generated. Run the rule engine on Recommendations page if needed.";
     }
   } catch (error) {
     showMessage("Dashboard failed: " + error.message, true);
@@ -276,6 +308,14 @@ const REC_STEPS = ["Recommendation", "Human decision", "Simulation", "Savings"];
 function showView(view) {
   const button = document.querySelector(`nav .tab[data-view="${view}"]`);
   if (button) button.click();
+}
+
+function showRecommendation(id) {
+  showView("recommendations");
+  setTimeout(() => {
+    const el = document.getElementById("recommendation-list");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  }, 120);
 }
 
 function stepTrail(status) {

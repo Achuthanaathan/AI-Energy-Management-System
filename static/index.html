@@ -25,37 +25,40 @@
     <div id="message" class="message hidden"></div>
 
     <section id="view-dashboard" class="view active">
-      <p class="lede"><span class="label">Now:</span>
-        <span id="now-summary">Loading…</span></p>
+      <div class="alert-box">
+        <span class="label">AI Insight</span>
+        <span id="now-summary">Loading…</span>
+      </div>
 
       <div class="kpi-row" id="dashboard-cards"></div>
 
       <div class="grid">
         <div class="panel">
-          <h2 class="panel-title">Energy trend</h2>
-          <div id="dashboard-chart" class="chart"></div>
-          <p class="panel-note">Plant load, 24 hours</p>
+          <div class="panel-head">
+            <h2 class="panel-title">Energy Demand Trend (24h Forecast)</h2>
+            <span class="legend-note"><span class="legend-box peak"></span>Peak Window (18:00–21:00)</span>
+          </div>
+          <div id="dashboard-chart" class="chart bars"></div>
+          <p class="panel-note">Hourly predicted plant demand (kW) &middot; Hover bar to inspect details</p>
         </div>
         <div class="panel">
-          <h2 class="panel-title">Status</h2>
-          <div id="dashboard-status" class="chips"></div>
+          <div class="panel-head">
+            <h2 class="panel-title">Operational Status &amp; Savings</h2>
+            <button class="link" onclick="showView('recommendations')">Recommendations &rarr;</button>
+          </div>
+          <div id="dashboard-status" class="status-summary"></div>
           <details class="details">
             <summary>View details</summary>
-            <div class="detail-body">
-              <p><span class="tag">Legend</span>Layout of the recommendation status chips shown on the Dashboard:</p>
-              <div class="chips" style="margin-top:6px;">
-                <span class="chip pending">pending <strong>1</strong></span>
-                <span class="chip approved">approved <strong>0</strong></span>
-                <span class="chip overridden">overridden <strong>0</strong></span>
-                <span class="chip simulated">simulated <strong>0</strong></span>
-              </div>
+            <div class="detail-body" id="dashboard-config-details">
+              <p><span class="tag">Workflow</span>AI Recommendation &rarr; Human Decision &rarr; Simulation &rarr; Savings</p>
+              <p class="tech">Model: Linear Regression &middot; Horizon: 24h &middot; No automated equipment control</p>
             </div>
           </details>
         </div>
       </div>
 
       <details class="details">
-        <summary>View details</summary>
+        <summary>View recommendation technical details</summary>
         <div class="detail-body">
           <p><span class="tag">AI INSIGHT</span><span id="insight-body"></span></p>
         </div>
