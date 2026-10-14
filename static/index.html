@@ -64,7 +64,7 @@
         </div>
       </details>
 
-      <p class="actions"><button onclick="loadDashboard()">Refresh dashboard</button></p>
+      <p class="actions"><button onclick="loadDashboard(this)">Refresh dashboard</button></p>
     </section>
 
     <section id="view-energy" class="view">
@@ -88,7 +88,7 @@
           <option value="72" selected>72 hours</option>
           <option value="168">168 hours</option>
         </select>
-        <button onclick="loadEnergy()">Load</button>
+        <button onclick="loadEnergy(this)">Load</button>
       </p>
       <table id="energy-history"></table>
     </section>
@@ -96,7 +96,7 @@
     <section id="view-forecast" class="view">
       <h2>Forecast (Linear Regression)</h2>
       <div class="cards" id="forecast-meta"></div>
-      <p><button onclick="loadForecast()">Refresh forecast</button></p>
+      <p><button onclick="loadForecast(this)">Refresh forecast</button></p>
       <h3>Next 24 hours (predicted plant demand)</h3>
       <div id="forecast-bars" class="bars"></div>
       <table id="forecast-table"></table>
@@ -105,7 +105,7 @@
     <section id="view-anomalies" class="view">
       <h2>Anomaly detection (Isolation Forest)</h2>
       <div class="cards" id="anomaly-meta"></div>
-      <p><button onclick="loadAnomalies()">Refresh anomalies</button></p>
+      <p><button onclick="loadAnomalies(this)">Refresh anomalies</button></p>
       <table id="anomaly-table"></table>
     </section>
 
@@ -124,7 +124,7 @@
           <option value="overridden">overridden</option>
           <option value="simulated">simulated</option>
         </select>
-        <button onclick="generateRecommendations()">Run rule engine</button>
+        <button onclick="generateRecommendations(this)">Run rule engine</button>
         <span class="muted">Human approval required &middot; nothing here controls real equipment</span>
       </p>
       <div id="recommendation-list">Loading...</div>
@@ -136,7 +136,7 @@
         Approved or overridden recommendations can be simulated. Values come from the
         simulated dataset only - they are not real industrial savings.
       </p>
-      <p><button onclick="loadSimulations()">Refresh results</button></p>
+      <p><button onclick="loadSimulations(this)">Refresh results</button></p>
       <div class="cards" id="savings-totals"></div>
       <table id="simulation-table"></table>
     </section>

@@ -56,9 +56,24 @@ def _peak_shift_recommendation(db: Session, fc: dict):
     to_hour = destination["timestamp"].hour
     tariff_to = tariff_for_hour(to_hour)
 
-    code = f"PEAK_SHIFT_{peak_ts.strftime('%Y%m%d%H')}"
-    if tariff_to >= tariff_from or _exists(db, code):
+    if tariff_to >= tariff_from:
         return None
+
+    # If an active pending recommendation already exists for peak shift, avoid duplicate pending tasks
+    pending = (
+        db.query(Recommendation)
+        .filter(Recommendation.rule == "peak_shift", Recommendation.status == "pending")
+        .first()
+    )
+    if pending is not None:
+        return None
+
+    base_code = f"PEAK_SHIFT_{peak_ts.strftime('%Y%m%d%H')}"
+    code = base_code
+    suffix = 1
+    while _exists(db, code):
+        suffix += 1
+        code = f"{base_code}_run{suffix}"
 
     flex_kw = _flexible_load_kw(db, FLEXIBLE_MACHINE)
     shift_kwh = round(flex_kw * WINDOW_HOURS, 2)
@@ -100,24 +115,39 @@ def _anomaly_recommendations(db: Session, anomaly_report: dict, fc: dict):
     """RULE 2 - ask an operator to investigate detected anomalies."""
     created = []
     seen_machines = set()
-    for anomaly in anomaly_report["items"]:
-        if len(seen_machines) >= MAX_ANOMALY_RECOMMENDATIONS:
-            break
-        if anomaly["machine"] in seen_machines or anomaly["excess_kwh"] <= 0:
-            continue
-        seen_machines.add(anomaly["machine"])
 
-        code = f"ANOMALY_CHECK_{anomaly['machine']}_{anomaly['timestamp'].strftime('%Y%m%d%H')}"
-        if _exists(db, code):
+    # Active machines that already have pending anomaly recommendations
+    pending_machines = {
+        r.machine
+        for r in db.query(Recommendation.machine)
+        .filter(Recommendation.rule == "anomaly_check", Recommendation.status == "pending")
+        .all()
+    }
+    if len(pending_machines) >= MAX_ANOMALY_RECOMMENDATIONS:
+        return []
+
+    max_to_create = MAX_ANOMALY_RECOMMENDATIONS - len(pending_machines)
+    for anomaly in anomaly_report["items"]:
+        if len(created) >= max_to_create:
+            break
+        machine = anomaly["machine"]
+        if machine in seen_machines or machine in pending_machines or anomaly["excess_kwh"] <= 0:
             continue
+
+        base_code = f"ANOMALY_CHECK_{machine}_{anomaly['timestamp'].strftime('%Y%m%d%H')}"
+        code = base_code
+        suffix = 1
+        while _exists(db, code):
+            suffix += 1
+            code = f"{base_code}_run{suffix}"
 
         recoverable = round(anomaly["excess_kwh"] * 0.5, 2)  # modest assumption
         recommendation = Recommendation(
             code=code,
             rule="anomaly_check",
             created_at=datetime.now(),
-            machine=anomaly["machine"],
-            title=f"Investigate abnormal energy use on {anomaly['machine']}",
+            machine=machine,
+            title=f"Investigate abnormal energy use on {machine}",
             reason=(
                 f"Isolation Forest flagged {anomaly['energy_kwh']:.1f} kWh at "
                 f"{anomaly['timestamp'].strftime('%Y-%m-%d %H:%M')}, about {anomaly['excess_kwh']:.1f} kWh above "
@@ -126,7 +156,7 @@ def _anomaly_recommendations(db: Session, anomaly_report: dict, fc: dict):
                 f"include a stuck load, a faulty sensor or idle running."
             ),
             action=(
-                f"Ask maintenance to inspect {anomaly['machine']} for idle/unloaded running, leaks and sensor "
+                f"Ask maintenance to inspect {machine} for idle/unloaded running, leaks and sensor "
                 f"calibration. No automatic action is taken on any equipment."
             ),
             shift_kwh=0.0,
@@ -141,6 +171,7 @@ def _anomaly_recommendations(db: Session, anomaly_report: dict, fc: dict):
             status="pending",
         )
         created.append(recommendation)
+        seen_machines.add(machine)
     return created
 
 

@@ -663,6 +663,12 @@ tr:hover td {
   color: #991b1b;
 }
 
+.message.success {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #065f46;
+}
+
 .hidden { display: none; }
 
 .muted {
