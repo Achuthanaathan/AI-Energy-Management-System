@@ -1,150 +1,658 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>AI-Powered Energy Management System</title>
+  <title>AETHER — Industrial Energy Intelligence</title>
+  <meta name="description" content="AI-Powered Energy Management System for Industrial Cost Reduction" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <header>
-    <h1>AI-Powered Energy Management System</h1>
-    <p class="sub">Industrial cost-reduction prototype &middot; simulated data only &middot; no real equipment is controlled</p>
-  </header>
+  <div class="app-container" id="app-root">
 
-  <nav>
-    <button class="tab active" data-view="dashboard">Dashboard</button>
-    <button class="tab" data-view="energy">Energy</button>
-    <button class="tab" data-view="forecast">Forecast</button>
-    <button class="tab" data-view="anomalies">Anomalies</button>
-    <button class="tab" data-view="recommendations">Recommendations</button>
-    <button class="tab" data-view="simulation">Simulation / Savings</button>
-  </nav>
-
-  <main>
-    <div id="message" class="message hidden"></div>
-
-    <section id="view-dashboard" class="view active">
-      <div class="alert-box">
-        <span class="label">AI Insight</span>
-        <span id="now-summary">Loading…</span>
+    <!-- Collapsible Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <div class="logo-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">AETHER<span class="brand-highlight">UI</span></span>
+            <span class="brand-sub">ENERGY INTELLIGENCE</span>
+          </div>
+        </div>
       </div>
 
-      <div class="kpi-row" id="dashboard-cards"></div>
+      <!-- Main Navigation -->
+      <nav class="sidebar-nav" aria-label="Main Navigation">
+        <div class="nav-section-title">Operations</div>
 
-      <div class="grid">
-        <div class="panel">
-          <div class="panel-head">
-            <h2 class="panel-title">Energy Demand Trend (24h Forecast)</h2>
-            <span class="legend-note"><span class="legend-box peak"></span>Peak Window (18:00–21:00)</span>
+        <button class="nav-item tab active" data-view="dashboard" title="Dashboard">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect width="7" height="9" x="3" y="3" rx="1"></rect>
+              <rect width="7" height="5" x="14" y="3" rx="1"></rect>
+              <rect width="7" height="9" x="14" y="12" rx="1"></rect>
+              <rect width="7" height="5" x="3" y="16" rx="1"></rect>
+            </svg>
+          </span>
+          <span class="nav-label">Dashboard</span>
+          <span class="nav-badge" id="nav-dash-badge" style="display:none;"></span>
+        </button>
+
+        <button class="nav-item tab" data-view="energy" title="Energy Monitoring">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Energy Monitoring</span>
+        </button>
+
+        <button class="nav-item tab" data-view="forecast" title="Energy Forecast">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+              <polyline points="16 7 22 7 22 13"></polyline>
+            </svg>
+          </span>
+          <span class="nav-label">Energy Forecast</span>
+        </button>
+
+        <button class="nav-item tab" data-view="anomalies" title="Anomaly Detection">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </span>
+          <span class="nav-label">Anomaly Detection</span>
+          <span class="nav-badge alert" id="nav-anomaly-badge" style="display:none;"></span>
+        </button>
+
+        <div class="nav-section-title">Optimization</div>
+
+        <button class="nav-item tab" data-view="recommendations" title="Recommendations">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m9 11 3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Recommendations</span>
+          <span class="nav-badge pending" id="nav-rec-badge" style="display:none;">0</span>
+        </button>
+
+        <button class="nav-item tab" data-view="simulation" title="Simulation / Savings">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path>
+              <path d="M12 18V6"></path>
+            </svg>
+          </span>
+          <span class="nav-label">Simulation &amp; Savings</span>
+        </button>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="telemetry-status">
+          <span class="pulse-indicator"></span>
+          <div class="telemetry-info">
+            <span class="telemetry-label">Simulation Engine</span>
+            <span class="telemetry-sub">M&amp;V Protocol Active</span>
           </div>
-          <div id="dashboard-chart" class="chart bars"></div>
-          <p class="panel-note">Hourly predicted plant demand (kW) &middot; Hover bar to inspect details</p>
         </div>
-        <div class="panel">
-          <div class="panel-head">
-            <h2 class="panel-title">Operational Status &amp; Savings</h2>
-            <button class="link" onclick="showView('recommendations')">Recommendations &rarr;</button>
+
+        <button id="sidebar-toggle-btn" class="sidebar-toggle" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+          <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          <span class="toggle-text">Collapse Sidebar</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Viewport -->
+    <div class="main-viewport">
+
+      <!-- Top Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button id="mobile-menu-btn" class="mobile-toggle" aria-label="Open Menu">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div class="breadcrumbs">
+            <span class="crumb-root">AETHER</span>
+            <svg class="crumb-separator" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <span class="crumb-current" id="header-breadcrumb">Dashboard</span>
           </div>
-          <div id="dashboard-status" class="status-summary"></div>
-          <details class="details">
-            <summary>View details</summary>
-            <div class="detail-body" id="dashboard-config-details">
-              <p><span class="tag">Workflow</span>AI Recommendation &rarr; Human Decision &rarr; Simulation &rarr; Savings</p>
-              <p class="tech">Model: Linear Regression &middot; Horizon: 24h &middot; No automated equipment control</p>
+        </div>
+
+        <div class="header-right">
+          <!-- Command Palette Trigger -->
+          <button class="command-palette-btn" onclick="openCommandPalette()" title="Press ⌘K or Ctrl+K to search">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>Search telemetry or views...</span>
+            <kbd class="kbd-shortcut">⌘K</kbd>
+          </button>
+
+          <!-- Prototype Mode Badge -->
+          <div class="system-mode-pill" title="Prototype mode: simulated data only, no physical hardware controlled">
+            <span class="pill-dot"></span>
+            <span class="pill-text">Simulated Telemetry</span>
+          </div>
+
+          <!-- Notification Bell -->
+          <div class="notification-wrapper">
+            <button class="icon-btn" id="notif-bell" onclick="showView('recommendations')" title="View Pending Recommendations">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <span class="notif-ping" id="notif-ping" style="display:none;"></span>
+            </button>
+          </div>
+
+          <!-- User / Operator Avatar -->
+          <div class="user-profile-pill">
+            <div class="user-avatar">OP</div>
+            <div class="user-details">
+              <span class="user-name">Plant Op 01</span>
+              <span class="user-role">Shift Supervisor</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Main Content Area -->
+      <main class="content-container">
+
+        <!-- Global Toast Notifications -->
+        <div id="message" class="message hidden" role="status" aria-live="polite"></div>
+
+        <!-- ================================================================= -->
+        <!-- VIEW: DASHBOARD -->
+        <!-- ================================================================= -->
+        <section id="view-dashboard" class="view active">
+
+          <!-- View Header Row -->
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Industrial Energy Operations</h1>
+              <p class="view-subtitle">Real-time facility telemetry, demand forecasting &amp; automated cost reduction</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-primary" onclick="loadDashboard(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span>Refresh Dashboard</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- AI Insight Spotlight Banner -->
+          <div class="ai-banner spotlight-card">
+            <div class="ai-banner-glow"></div>
+            <div class="ai-banner-content">
+              <div class="ai-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+                <span>AI Insight</span>
+              </div>
+              <div class="ai-text" id="now-summary">Scanning plant baseline and anomaly logs…</div>
+            </div>
+          </div>
+
+          <!-- KPI Cards Grid (4 items) -->
+          <div class="kpi-grid" id="dashboard-cards"></div>
+
+          <!-- Main Dashboard Visuals Grid -->
+          <div class="dashboard-grid">
+
+            <!-- Chart Panel -->
+            <div class="panel spotlight-card chart-panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Energy Demand Trend (24h Forecast)</h2>
+                  <p class="panel-subtitle">Hourly predicted plant load (kW) with peak-tariff window overlay</p>
+                </div>
+                <div class="chart-legend">
+                  <span class="legend-item"><span class="legend-dot normal"></span>Standard</span>
+                  <span class="legend-item"><span class="legend-dot peak"></span>Peak Window (18:00–21:00)</span>
+                </div>
+              </div>
+
+              <!-- Container for SVG / Bar chart -->
+              <div id="dashboard-chart" class="chart-canvas-container"></div>
+
+              <div class="panel-footer-note">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+                <span>Linear Regression multi-feature forecast &middot; Hover columns to inspect hourly demand</span>
+              </div>
+            </div>
+
+            <!-- Operational Status & Savings Panel -->
+            <div class="panel spotlight-card status-panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Operational Status &amp; Savings</h2>
+                  <p class="panel-subtitle">Lifecycle verification and pipeline health</p>
+                </div>
+                <button class="text-link" onclick="showView('recommendations')">
+                  <span>View All</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </div>
+
+              <div id="dashboard-status" class="status-summary-wrapper"></div>
+
+              <details class="details-accordion">
+                <summary class="details-summary">
+                  <span>System Configuration &amp; Accuracy</span>
+                  <svg class="chevron-rot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </summary>
+                <div class="detail-body" id="dashboard-config-details">
+                  <p><span class="tag">Workflow</span>AI Recommendation &rarr; Human Decision &rarr; Simulation &rarr; Savings</p>
+                  <p class="tech">Model: Linear Regression &middot; Horizon: 24h &middot; No automated equipment control</p>
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <!-- Secondary Recommendation Details Accordion -->
+          <details class="details-accordion mt-4">
+            <summary class="details-summary">
+              <span>View Technical Recommendation Details &amp; Root Cause</span>
+              <svg class="chevron-rot" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </summary>
+            <div class="detail-body">
+              <div class="tech-insight-box">
+                <span class="tag tag-ai">AI INSIGHT</span>
+                <div id="insight-body" class="tech-insight-text">No active recommendations generated.</div>
+              </div>
             </div>
           </details>
+
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- VIEW: ENERGY MONITORING -->
+        <!-- ================================================================= -->
+        <section id="view-energy" class="view">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Real-Time Energy Telemetry</h1>
+              <p class="view-subtitle">Live machine meters, tariff thresholds, and historical energy consumption</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-primary" onclick="loadEnergy(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span>Refresh Telemetry</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Current Energy KPI Row -->
+          <div class="kpi-grid" id="energy-current"></div>
+
+          <!-- Machine Summary Section -->
+          <div class="section-card spotlight-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Machine Fleet 24-Hour Summary</h3>
+                <p class="card-subtitle">Aggregated energy usage, cost distribution, and peak load per asset</p>
+              </div>
+            </div>
+            <div class="table-container">
+              <table id="energy-summary" class="data-table"></table>
+            </div>
+          </div>
+
+          <!-- Historical Readings Section -->
+          <div class="section-card spotlight-card mt-6">
+            <div class="card-header flex-between">
+              <div>
+                <h3 class="card-title">Historical Telemetry Readings</h3>
+                <p class="card-subtitle">Inspect historical load data, peak tariff flags, and time intervals</p>
+              </div>
+              <div class="filter-toolbar">
+                <div class="filter-item">
+                  <label for="history-machine">Machine:</label>
+                  <select id="history-machine" class="form-select">
+                    <option value="ALL">ALL (Plant Total)</option>
+                    <option>CNC-Mill-01</option>
+                    <option>Compressor-02</option>
+                    <option>Chiller-03</option>
+                    <option>Conveyor-Line-04</option>
+                  </select>
+                </div>
+                <div class="filter-item">
+                  <label for="history-hours">Duration:</label>
+                  <select id="history-hours" class="form-select">
+                    <option value="24">24 hours</option>
+                    <option value="72" selected>72 hours</option>
+                    <option value="168">168 hours</option>
+                  </select>
+                </div>
+                <button class="btn btn-secondary" onclick="loadEnergy(this)">Load History</button>
+              </div>
+            </div>
+            <div class="table-container">
+              <table id="energy-history" class="data-table"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- VIEW: ENERGY FORECAST -->
+        <!-- ================================================================= -->
+        <section id="view-forecast" class="view">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Demand Forecasting</h1>
+              <p class="view-subtitle">Predictive machine learning models for peak demand forecasting &amp; peak shaving</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-primary" onclick="loadForecast(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span>Refresh Forecast</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Forecast Metadata Cards -->
+          <div class="kpi-grid" id="forecast-meta"></div>
+
+          <!-- Visual Chart Section -->
+          <div class="section-card spotlight-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Next 24 Hours Demand Prediction (kW)</h3>
+                <p class="card-subtitle">Predicted facility demand with red highlights during peak-tariff hours (18:00–21:00)</p>
+              </div>
+            </div>
+            <div id="forecast-bars" class="chart-canvas-container"></div>
+          </div>
+
+          <!-- Forecast Detailed Table -->
+          <div class="section-card spotlight-card mt-6">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Hourly Forecast Breakdown</h3>
+                <p class="card-subtitle">Quantitative hourly predictions and time horizons</p>
+              </div>
+            </div>
+            <div class="table-container">
+              <table id="forecast-table" class="data-table"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- VIEW: ANOMALY DETECTION -->
+        <!-- ================================================================= -->
+        <section id="view-anomalies" class="view">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Isolation Forest Anomaly Detection</h1>
+              <p class="view-subtitle">Unsupervised machine learning identifying irregular industrial power spikes and machine degradation</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-primary" onclick="loadAnomalies(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span>Refresh Anomalies</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Anomaly Metadata Cards -->
+          <div class="kpi-grid" id="anomaly-meta"></div>
+
+          <!-- Anomaly Table Section -->
+          <div class="section-card spotlight-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">Flagged Anomalous Power Events</h3>
+                <p class="card-subtitle">Readings exceeding typical operational bounds, ranked by anomaly severity score</p>
+              </div>
+            </div>
+            <div class="table-container">
+              <table id="anomaly-table" class="data-table"></table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- VIEW: RECOMMENDATIONS -->
+        <!-- ================================================================= -->
+        <section id="view-recommendations" class="view">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Actionable Optimization Recommendations</h1>
+              <p class="view-subtitle">Rule-engine generated peak-shifting and anomaly investigations requiring human-in-the-loop review</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-primary" onclick="generateRecommendations(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span>Run Rule Engine</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Workflow Banner -->
+          <div class="workflow-strip spotlight-card">
+            <div class="workflow-step active">
+              <span class="step-num">1</span>
+              <span class="step-label">AI Recommendation</span>
+            </div>
+            <svg class="step-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <div class="workflow-step">
+              <span class="step-num">2</span>
+              <span class="step-label">Human Decision</span>
+            </div>
+            <svg class="step-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <div class="workflow-step">
+              <span class="step-num">3</span>
+              <span class="step-label">M&amp;V Simulation</span>
+            </div>
+            <svg class="step-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <div class="workflow-step">
+              <span class="step-num">4</span>
+              <span class="step-label">Verified Savings</span>
+            </div>
+          </div>
+
+          <!-- Filter & Controls Toolbar -->
+          <div class="toolbar-card spotlight-card">
+            <div class="toolbar-left">
+              <span class="toolbar-label">Lifecycle Status:</span>
+              <div id="rec-summary" class="chips-container"></div>
+            </div>
+            <div class="toolbar-right">
+              <div class="filter-item">
+                <label for="rec-filter">Filter View:</label>
+                <select id="rec-filter" class="form-select" onchange="loadRecommendations()">
+                  <option value="all">All recommendations</option>
+                  <option value="pending">Pending review</option>
+                  <option value="approved">Approved</option>
+                  <option value="overridden">Overridden</option>
+                  <option value="simulated">Simulated</option>
+                </select>
+              </div>
+              <span class="muted-notice">Human approval required &middot; No real equipment controlled</span>
+            </div>
+          </div>
+
+          <!-- Recommendations List Container -->
+          <div id="recommendation-list" class="recommendation-stack">Loading recommendations…</div>
+        </section>
+
+        <!-- ================================================================= -->
+        <!-- VIEW: SIMULATION & SAVINGS -->
+        <!-- ================================================================= -->
+        <section id="view-simulation" class="view">
+          <div class="view-header">
+            <div>
+              <h1 class="view-title">Simulated Measurement &amp; Verification (M&amp;V)</h1>
+              <p class="view-subtitle">Quantified baseline vs. simulated outcome analysis following IPMVP guidelines</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-primary" onclick="loadSimulations(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                </svg>
+                <span>Refresh Results</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Disclaimer Banner -->
+          <div class="info-banner spotlight-card">
+            <div class="info-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+            </div>
+            <div class="info-text">
+              Approved or overridden recommendations can be simulated. Values are computed strictly against the mathematical baseline of the simulated dataset to demonstrate cost-reduction workflows.
+            </div>
+          </div>
+
+          <!-- Savings Totals KPIs -->
+          <div class="kpi-grid" id="savings-totals"></div>
+
+          <!-- Simulation Runs Table -->
+          <div class="section-card spotlight-card">
+            <div class="card-header">
+              <div>
+                <h3 class="card-title">M&amp;V Verification Run Log</h3>
+                <p class="card-subtitle">Per-recommendation baseline comparison, energy saved, and peak demand reduction</p>
+              </div>
+            </div>
+            <div class="table-container">
+              <table id="simulation-table" class="data-table"></table>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- App Footer -->
+      <footer class="app-footer">
+        <div class="footer-left">
+          <span>AETHER EMS &middot; Industrial Cost Reduction Prototype</span>
+        </div>
+        <div class="footer-right">
+          <span>Simulated Data Pipeline &rarr; Forecast &rarr; Anomaly &rarr; Rule Engine &rarr; M&amp;V Simulation &rarr; Savings</span>
+        </div>
+      </footer>
+
+    </div>
+  </div>
+
+  <!-- Command Palette Modal Mockup -->
+  <div id="cmd-palette-modal" class="modal-backdrop hidden" onclick="closeCommandPalette(event)">
+    <div class="cmd-palette-box spotlight-card" onclick="event.stopPropagation()">
+      <div class="cmd-input-wrapper">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="cmd-search-input" placeholder="Type a view or action... (e.g. Dashboard, Forecast, Run Engine)" oninput="filterCommandPalette(this.value)" autofocus />
+        <kbd class="kbd-badge" onclick="closeCommandPalette()">ESC</kbd>
+      </div>
+      <div class="cmd-list" id="cmd-options-list">
+        <div class="cmd-item" onclick="selectCommandView('dashboard')">
+          <span class="cmd-icon">📊</span>
+          <div class="cmd-item-info">
+            <span class="cmd-title">Dashboard</span>
+            <span class="cmd-sub">Real-time facility overview &amp; 24h demand chart</span>
+          </div>
+          <kbd class="kbd-sub">↵</kbd>
+        </div>
+        <div class="cmd-item" onclick="selectCommandView('energy')">
+          <span class="cmd-icon">⚡</span>
+          <div class="cmd-item-info">
+            <span class="cmd-title">Energy Monitoring</span>
+            <span class="cmd-sub">Live meters and machine telemetry</span>
+          </div>
+          <kbd class="kbd-sub">↵</kbd>
+        </div>
+        <div class="cmd-item" onclick="selectCommandView('forecast')">
+          <span class="cmd-icon">📈</span>
+          <div class="cmd-item-info">
+            <span class="cmd-title">Energy Forecast</span>
+            <span class="cmd-sub">Linear regression load predictions</span>
+          </div>
+          <kbd class="kbd-sub">↵</kbd>
+        </div>
+        <div class="cmd-item" onclick="selectCommandView('anomalies')">
+          <span class="cmd-icon">🛡️</span>
+          <div class="cmd-item-info">
+            <span class="cmd-title">Anomaly Detection</span>
+            <span class="cmd-sub">Isolation Forest power spikes</span>
+          </div>
+          <kbd class="kbd-sub">↵</kbd>
+        </div>
+        <div class="cmd-item" onclick="selectCommandView('recommendations')">
+          <span class="cmd-icon">🎯</span>
+          <div class="cmd-item-info">
+            <span class="cmd-title">Recommendations</span>
+            <span class="cmd-sub">Review peak shifts and trigger rule engine</span>
+          </div>
+          <kbd class="kbd-sub">↵</kbd>
+        </div>
+        <div class="cmd-item" onclick="selectCommandView('simulation')">
+          <span class="cmd-icon">💰</span>
+          <div class="cmd-item-info">
+            <span class="cmd-title">Simulation &amp; Savings</span>
+            <span class="cmd-sub">M&amp;V verified cost &amp; peak reduction</span>
+          </div>
+          <kbd class="kbd-sub">↵</kbd>
         </div>
       </div>
-
-      <details class="details">
-        <summary>View recommendation technical details</summary>
-        <div class="detail-body">
-          <p><span class="tag">AI INSIGHT</span><span id="insight-body"></span></p>
-        </div>
-      </details>
-
-      <p class="actions"><button onclick="loadDashboard(this)">Refresh dashboard</button></p>
-    </section>
-
-    <section id="view-energy" class="view">
-      <h2>Current energy data</h2>
-      <div class="cards" id="energy-current"></div>
-      <h2>24-hour summary per machine</h2>
-      <table id="energy-summary"></table>
-      <h2>Historical readings</h2>
-      <p>
-        Machine:
-        <select id="history-machine">
-          <option value="ALL">ALL (plant total)</option>
-          <option>CNC-Mill-01</option>
-          <option>Compressor-02</option>
-          <option>Chiller-03</option>
-          <option>Conveyor-Line-04</option>
-        </select>
-        Last
-        <select id="history-hours">
-          <option value="24">24 hours</option>
-          <option value="72" selected>72 hours</option>
-          <option value="168">168 hours</option>
-        </select>
-        <button onclick="loadEnergy(this)">Load</button>
-      </p>
-      <table id="energy-history"></table>
-    </section>
-
-    <section id="view-forecast" class="view">
-      <h2>Forecast (Linear Regression)</h2>
-      <div class="cards" id="forecast-meta"></div>
-      <p><button onclick="loadForecast(this)">Refresh forecast</button></p>
-      <h3>Next 24 hours (predicted plant demand)</h3>
-      <div id="forecast-bars" class="bars"></div>
-      <table id="forecast-table"></table>
-    </section>
-
-    <section id="view-anomalies" class="view">
-      <h2>Anomaly detection (Isolation Forest)</h2>
-      <div class="cards" id="anomaly-meta"></div>
-      <p><button onclick="loadAnomalies(this)">Refresh anomalies</button></p>
-      <table id="anomaly-table"></table>
-    </section>
-
-    <section id="view-recommendations" class="view">
-      <h2>Recommendations</h2>
-
-      <p class="flow-line">AI Recommendation &rarr; Human Decision &rarr; Simulation &rarr; Savings</p>
-      <div id="rec-summary" class="chips"></div>
-
-      <p>
-        Status filter:
-        <select id="rec-filter" onchange="loadRecommendations()">
-          <option value="all">all</option>
-          <option value="pending">pending</option>
-          <option value="approved">approved</option>
-          <option value="overridden">overridden</option>
-          <option value="simulated">simulated</option>
-        </select>
-        <button onclick="generateRecommendations(this)">Run rule engine</button>
-        <span class="muted">Human approval required &middot; nothing here controls real equipment</span>
-      </p>
-      <div id="recommendation-list">Loading...</div>
-    </section>
-
-    <section id="view-simulation" class="view">
-      <h2>Simulated Measurement &amp; Verification (M&amp;V)</h2>
-      <p>
-        Approved or overridden recommendations can be simulated. Values come from the
-        simulated dataset only - they are not real industrial savings.
-      </p>
-      <p><button onclick="loadSimulations(this)">Refresh results</button></p>
-      <div class="cards" id="savings-totals"></div>
-      <table id="simulation-table"></table>
-    </section>
-  </main>
-
-  <footer>
-    <p>Prototype: Simulated data &rarr; Forecast &rarr; Anomaly &rarr; Recommendation &rarr; Approve/Override &rarr; Simulation &rarr; Savings</p>
-  </footer>
+    </div>
+  </div>
 
   <script src="/app.js"></script>
 </body>
