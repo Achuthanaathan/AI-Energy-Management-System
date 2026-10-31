@@ -2,17 +2,29 @@
 
 Run with:  python -m uvicorn app.main:app --reload
 """
+import logging
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.anomaly import detect_anomalies
+from app.analytics import (
+    get_daily_energy_consumption,
+    get_highest_consumption_readings,
+    get_hourly_consumption_profile,
+    get_machine_cost_summary,
+    get_machine_energy_summary,
+    get_peak_demand_periods,
+    get_production_efficiency,
+)
+from app.pipeline import get_dataset_metadata, run_pipeline
 from app.data_generator import PEAK_TARIFF_HOURS, generate_dataset, tariff_for_hour
 from app.database import SessionLocal, get_db, init_db
 from app.forecasting import forecast
@@ -45,6 +57,58 @@ async def lifespan(_: FastAPI):
         if db.query(EnergyReading).count() == 0:
             seed_demo_data(db)
     yield
+
+
+logger = logging.getLogger("aether.api")
+
+ADMIN_TOKEN_ENV_VAR = "AETHER_ADMIN_TOKEN"
+ENABLE_DESTRUCTIVE_ENV_VAR = "AETHER_ENABLE_DESTRUCTIVE_OPS"
+PUBLIC_DEPLOYMENT_ENV_VAR = "AETHER_PUBLIC_DEPLOYMENT"
+
+
+def verify_destructive_access(
+    x_admin_token: Optional[str] = Header(None, alias="X-Admin-Token"),
+    admin_token: Optional[str] = Query(None, alias="admin_token"),
+) -> None:
+    """Security guard for destructive operations (reset and dataset replacement).
+
+    Policy:
+    1. If AETHER_ENABLE_DESTRUCTIVE_OPS is 'false'/'0'/'disabled'/'no',
+       destructive operations are disabled -> HTTP 403 Forbidden.
+    2. If AETHER_ADMIN_TOKEN is configured in the environment:
+       A matching 'X-Admin-Token' header or 'admin_token' query parameter is required.
+       Missing or invalid token -> HTTP 401 Unauthorized.
+    3. If AETHER_PUBLIC_DEPLOYMENT is 'true'/'1'/'yes' (or ENVIRONMENT='production')
+       and no AETHER_ADMIN_TOKEN is configured:
+       Destructive operations are disabled to protect public deployments -> HTTP 403 Forbidden.
+    4. Otherwise (default local development and testing):
+       Permitted without credentials so local workflows remain frictionless.
+    """
+    enable_flag = os.environ.get(ENABLE_DESTRUCTIVE_ENV_VAR, "").strip().lower()
+    if enable_flag in ("false", "0", "disabled", "no"):
+        raise HTTPException(
+            status_code=403,
+            detail="Destructive operations are disabled in this environment.",
+        )
+
+    configured_token = os.environ.get(ADMIN_TOKEN_ENV_VAR, "").strip()
+    is_public = (
+        os.environ.get(PUBLIC_DEPLOYMENT_ENV_VAR, "").strip().lower() in ("true", "1", "yes")
+        or os.environ.get("ENVIRONMENT", "").strip().lower() in ("production", "public")
+    )
+
+    if configured_token:
+        provided_token = x_admin_token or admin_token
+        if not provided_token or provided_token != configured_token:
+            raise HTTPException(
+                status_code=401,
+                detail="Unauthorized: Valid administrator token required for destructive operations.",
+            )
+    elif is_public:
+        raise HTTPException(
+            status_code=403,
+            detail="Destructive operations are disabled in public deployment when no administrator token is configured.",
+        )
 
 
 app = FastAPI(title="AI-Powered Energy Management System (prototype)", lifespan=lifespan)
@@ -315,7 +379,10 @@ def api_dashboard(db: Session = Depends(get_db)):
 
 
 @app.post("/api/reset")
-def api_reset(db: Session = Depends(get_db)):
+def api_reset(
+    db: Session = Depends(get_db),
+    _auth: None = Depends(verify_destructive_access),
+):
     """Re-generate the whole simulated dataset (handy for demos/tests)."""
     db.query(SimulationResult).delete()
     db.query(Recommendation).delete()
@@ -323,6 +390,98 @@ def api_reset(db: Session = Depends(get_db)):
     db.commit()
     count = seed_demo_data(db)
     return {"status": "reset", "readings": count}
+
+
+
+# --------------------------------------------------------------------------- #
+# Data Pipeline & SQL-based Analytics
+# --------------------------------------------------------------------------- #
+@app.get("/api/pipeline/status")
+def api_pipeline_status(db: Session = Depends(get_db)):
+    """Retrieve metadata and status of the currently ingested dataset."""
+    return get_dataset_metadata(db)
+
+
+@app.post("/api/pipeline/run")
+def api_pipeline_run(
+    days: int = Query(30, ge=1, le=365, description="Number of days to simulate"),
+    seed: int = Query(42, description="Random seed for reproducible data generation"),
+    replace: bool = Query(False, description="Explicit flag: replace existing dataset if True"),
+    x_admin_token: Optional[str] = Header(None, alias="X-Admin-Token"),
+    admin_token: Optional[str] = Query(None, alias="admin_token"),
+    db: Session = Depends(get_db),
+):
+    """Execute the reproducible ETL pipeline (Extract -> Validate -> Transform -> Load)."""
+    if replace:
+        verify_destructive_access(x_admin_token=x_admin_token, admin_token=admin_token)
+
+    try:
+        result = run_pipeline(db, days=days, seed=seed, replace=replace)
+        return result.to_dict()
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Pipeline execution failed")
+        raise HTTPException(
+            status_code=500,
+            detail="Pipeline execution failed due to an internal server error.",
+        ) from None
+
+
+@app.get("/api/analytics/machine-summary")
+def api_analytics_machines(db: Session = Depends(get_db)):
+    """SQL analytics: Energy consumption and cost metrics by machine."""
+    energy_summary = get_machine_energy_summary(db)
+    cost_summary = get_machine_cost_summary(db)
+    return {
+        "energy": energy_summary,
+        "cost": cost_summary,
+    }
+
+
+@app.get("/api/analytics/daily")
+def api_analytics_daily(
+    days: Optional[int] = Query(None, ge=1, le=365, description="Limit to last N days"),
+    machine: str = Query("ALL", description="Filter by machine or 'ALL'"),
+    db: Session = Depends(get_db),
+):
+    """SQL analytics: Daily aggregated consumption, cost, and peak demand."""
+    return get_daily_energy_consumption(db, days=days, machine=machine)
+
+
+@app.get("/api/analytics/hourly-profile")
+def api_analytics_hourly_profile(
+    machine: str = Query("ALL", description="Filter by machine or 'ALL'"),
+    db: Session = Depends(get_db),
+):
+    """SQL analytics: 24-hour diurnal load profile (hours 0-23)."""
+    return get_hourly_consumption_profile(db, machine=machine)
+
+
+@app.get("/api/analytics/peak-demand")
+def api_analytics_peak_demand(
+    limit: int = Query(10, ge=1, le=100, description="Number of top peak hours to return"),
+    machine: str = Query("ALL", description="Filter by machine or 'ALL'"),
+    db: Session = Depends(get_db),
+):
+    """SQL analytics: Top peak-demand periods across the plant or per machine."""
+    return get_peak_demand_periods(db, limit=limit, machine=machine)
+
+
+@app.get("/api/analytics/efficiency")
+def api_analytics_efficiency(db: Session = Depends(get_db)):
+    """SQL analytics: Specific Energy Consumption (SEC) per production unit."""
+    return get_production_efficiency(db)
+
+
+@app.get("/api/analytics/top-consumers")
+def api_analytics_top_consumers(
+    limit: int = Query(15, ge=1, le=100, description="Number of top consumption readings"),
+    machine: Optional[str] = Query(None, description="Optional machine filter"),
+    db: Session = Depends(get_db),
+):
+    """SQL analytics: Top individual power readings for operator investigation."""
+    return get_highest_consumption_readings(db, limit=limit, machine=machine)
 
 
 # The frontend is served as static files; keep this mount LAST so that
